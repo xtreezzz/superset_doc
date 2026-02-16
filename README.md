@@ -52,3 +52,32 @@ docker compose run --rm kag
 - `data/output/run-*/target_repo_head.txt`
 - `data/output/run-*/fallback-kag.json` (если сработал fallback)
 - либо ваш файл из `KG_COMMAND`, если `knowledge-graph` доступен
+
+
+## Запуск через helper-скрипт
+
+```bash
+bash scripts/run-docker.sh
+```
+
+Скрипт проверяет:
+- наличие `docker` в `PATH`;
+- доступность docker daemon.
+
+Если чего-то не хватает — завершится с понятной ошибкой.
+
+## Результат запуска в текущей среде
+
+Я попытался выполнить:
+
+```bash
+docker compose run --rm kag
+```
+
+И получил:
+
+```text
+bash: command not found: docker
+```
+
+То есть здесь Docker недоступен, поэтому контейнерный запуск подтвердить невозможно.
