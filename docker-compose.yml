@@ -10,9 +10,9 @@ services:
       TARGET_REPO_DIR: ${TARGET_REPO_DIR:-/workspace/src/superset}
       OUTPUT_DIR: ${OUTPUT_DIR:-/workspace/output}
       SKIP_CLONE: ${SKIP_CLONE:-0}
+      ALLOW_FALLBACK_GRAPH: ${ALLOW_FALLBACK_GRAPH:-1}
       # Replace with the actual command from
       # https://gitlab-org.gitlab.io/rust/knowledge-graph/
       KG_COMMAND: ${KG_COMMAND:-knowledge-graph --help}
     volumes:
-      - ./data/src:/workspace/src
-      - ./data/output:/workspace/output
+      - ./:/workspace

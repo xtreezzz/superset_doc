@@ -1,7 +1,0 @@
-[kag] start: 2026-02-16T10:34:39+00:00
-[kag] output run dir: /workspace/superset_doc/data/output/run-20260216-103439
-[kag] target repo dir: /workspace/superset_doc
-[kag] SKIP_CLONE=1, using existing directory
-[kag] running command: knowledge-graph > /workspace/superset_doc/data/output/mock-kag.json
-[kag] done: 2026-02-16T10:34:40+00:00
-[kag] artifacts in: /workspace/superset_doc/data/output/run-20260216-103439

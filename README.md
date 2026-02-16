@@ -5,55 +5,50 @@
 ## Что внутри
 
 - `Dockerfile` — сборка окружения Rust + опциональная установка `knowledge-graph`.
-- `docker-compose.yml` — запуск пайплайна с volume для исходников и артефактов.
+- `docker-compose.yml` — запуск пайплайна с volume.
 - `scripts/run-kag.sh` — клонирует/обновляет Superset и запускает `KG_COMMAND`.
+- `scripts/generate_fallback_kag.py` — fallback-генератор непустого JSON-графа из дерева файлов, если `knowledge-graph` недоступен.
 - `.env.example` — переменные окружения.
 
-## Быстрый старт
+## Почему раньше было пусто
 
-1. Скопируйте env-файл:
+Ранее в репозитории лежал `mock-kag.json` из тестовой команды, где граф был зашит как:
+
+```json
+{"nodes":[],"edges":[]}
+```
+
+Это не реальный результат `knowledge-graph`, а заглушка для проверки пайплайна.
+
+## Быстрый старт
 
 ```bash
 cp .env.example .env
 ```
 
-2. В `.env` задайте команду `KG_COMMAND` под актуальный CLI:
-
-- https://gitlab-org.gitlab.io/rust/knowledge-graph/
-
-3. Соберите контейнер.
-
-Если есть доступ к GitLab из вашей сети, можно сразу установить `knowledge-graph` при сборке:
+### Онлайн режим (предпочтительно)
 
 ```bash
+# при наличии доступа к gitlab.com/github.com
 docker compose build --build-arg INSTALL_KG_FROM_GITLAB=1 kag
+docker compose run --rm kag
 ```
 
-Если доступа нет — соберите без установки и добавьте бинарник другим способом:
+### Оффлайн/ограниченная сеть
 
-```bash
-docker compose build kag
-```
+Если `knowledge-graph` не установлен, скрипт автоматически создаст fallback-граф в:
 
-4. Запустите:
+- `data/output/run-YYYYmmdd-HHMMSS/fallback-kag.json`
+
+Запуск:
 
 ```bash
 docker compose run --rm kag
 ```
 
-5. Результаты каждого запуска лежат в отдельной папке:
+## Где смотреть результаты
 
-- `./data/output/run-YYYYmmdd-HHMMSS/`
-
-## Локальный тест пайплайна (без сети)
-
-Чтобы проверить только механику скрипта в оффлайне, можно использовать локальный репозиторий и пропустить clone:
-
-```bash
-SKIP_CLONE=1 TARGET_REPO_DIR=/workspace/superset_doc OUTPUT_DIR=/workspace/superset_doc/data/output KG_COMMAND='echo demo > /workspace/superset_doc/data/output/demo.txt' bash scripts/run-kag.sh
-```
-
-## Примечания
-
-- Если `knowledge-graph` отсутствует в `PATH`, скрипт завершится с кодом ошибки и создаст `kag_status.txt` с подсказкой в папке запуска.
-- При необходимости можно добавить отдельный сервис `neo4j` в `docker-compose.yml` для импорта графа.
+- `data/output/run-*/run.log`
+- `data/output/run-*/target_repo_head.txt`
+- `data/output/run-*/fallback-kag.json` (если сработал fallback)
+- либо ваш файл из `KG_COMMAND`, если `knowledge-graph` доступен

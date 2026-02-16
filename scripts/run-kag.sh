@@ -6,6 +6,7 @@ set -euo pipefail
 : "${OUTPUT_DIR:=/workspace/output}"
 : "${KG_COMMAND:=knowledge-graph --help}"
 : "${SKIP_CLONE:=0}"
+: "${ALLOW_FALLBACK_GRAPH:=1}"
 
 RUN_DIR="${OUTPUT_DIR}/run-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "${RUN_DIR}"
@@ -36,18 +37,40 @@ fi
 
 cd "${TARGET_REPO_DIR}"
 
-if ! command -v knowledge-graph >/dev/null 2>&1; then
-  cat > "${RUN_DIR}/kag_status.txt" <<STATUS
-knowledge-graph binary was not found in PATH.
-Install it in the image (set INSTALL_KG_FROM_GITLAB=1 with network access)
-or mount/provide the binary in PATH before running.
-STATUS
-  echo "[kag] ERROR: knowledge-graph binary not found"
-  exit 3
+FALLBACK_SCRIPT="${FALLBACK_SCRIPT:-}"
+if [ -z "${FALLBACK_SCRIPT}" ]; then
+  if [ -f "/workspace/scripts/generate_fallback_kag.py" ]; then
+    FALLBACK_SCRIPT="/workspace/scripts/generate_fallback_kag.py"
+  elif [ -f "$(dirname "$0")/generate_fallback_kag.py" ]; then
+    FALLBACK_SCRIPT="$(dirname "$0")/generate_fallback_kag.py"
+  elif [ -f "${TARGET_REPO_DIR}/scripts/generate_fallback_kag.py" ]; then
+    FALLBACK_SCRIPT="${TARGET_REPO_DIR}/scripts/generate_fallback_kag.py"
+  fi
 fi
 
-echo "[kag] running command: ${KG_COMMAND}"
-/bin/bash -lc "${KG_COMMAND}"
+if command -v knowledge-graph >/dev/null 2>&1; then
+  echo "[kag] running command: ${KG_COMMAND}"
+  /bin/bash -lc "${KG_COMMAND}"
+else
+  if [ "${ALLOW_FALLBACK_GRAPH}" = "1" ] && [ -n "${FALLBACK_SCRIPT}" ]; then
+    echo "[kag] knowledge-graph not found, generating fallback graph"
+    python3 "${FALLBACK_SCRIPT}" \
+      --root "${TARGET_REPO_DIR}" \
+      --output "${RUN_DIR}/fallback-kag.json"
+    cat > "${RUN_DIR}/kag_status.txt" <<STATUS
+knowledge-graph binary was not found in PATH.
+Generated fallback graph instead: ${RUN_DIR}/fallback-kag.json
+STATUS
+  else
+    cat > "${RUN_DIR}/kag_status.txt" <<STATUS
+knowledge-graph binary was not found in PATH and fallback script was not found.
+Install it in the image (set INSTALL_KG_FROM_GITLAB=1 with network access),
+mount/provide the binary in PATH, or set FALLBACK_SCRIPT.
+STATUS
+    echo "[kag] ERROR: knowledge-graph binary not found"
+    exit 3
+  fi
+fi
 
 git rev-parse HEAD > "${RUN_DIR}/target_repo_head.txt" || true
 echo "[kag] done: $(date -Iseconds)"
