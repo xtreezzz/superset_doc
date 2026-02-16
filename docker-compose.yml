@@ -1,0 +1,18 @@
+services:
+  kag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_KG_FROM_GITLAB: ${INSTALL_KG_FROM_GITLAB:-0}
+    environment:
+      TARGET_REPO_URL: ${TARGET_REPO_URL:-https://github.com/apache/superset.git}
+      TARGET_REPO_DIR: ${TARGET_REPO_DIR:-/workspace/src/superset}
+      OUTPUT_DIR: ${OUTPUT_DIR:-/workspace/output}
+      SKIP_CLONE: ${SKIP_CLONE:-0}
+      # Replace with the actual command from
+      # https://gitlab-org.gitlab.io/rust/knowledge-graph/
+      KG_COMMAND: ${KG_COMMAND:-knowledge-graph --help}
+    volumes:
+      - ./data/src:/workspace/src
+      - ./data/output:/workspace/output
